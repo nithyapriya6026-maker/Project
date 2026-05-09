@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>DarkWave Ultimate Pro</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#0f0f0f,#1c1c1c);
+    color:white;
+    overflow-x:hidden;
+}
+
+header{
+    background:#111;
+    padding:15px;
+    text-align:center;
+    box-shadow:0 0 25px #00ffff;
+}
+
+nav button{
+    margin:5px;
+    padding:10px 15px;
+    border:none;
+    border-radius:25px;
+    background:#222;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+nav button:hover{
+    background:#00ffff;
+    color:black;
+    transform:scale(1.1);
+}
+
+.page{
+    display:none;
+    padding:20px;
+    animation:fade 0.5s ease-in-out;
+}
+
+.active{ display:block; }
+
+@keyframes fade{
+    from{opacity:0; transform:translateY(20px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+.card-container{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+}
+
+.card{
+    width:170px;
+    background:#1a1a1a;
+    padding:10px;
+    border-radius:15px;
+    text-align:center;
+    cursor:pointer;
+    transition:0.4s;
+}
+
+.card img{
+    width:100%;
+    border-radius:10px;
+}
+
+.card:hover{
+    transform:scale(1.1);
+    box-shadow:0 0 25px #ff00ff;
+}
+
+.song{
+    background:#1a1a1a;
+    padding:10px;
+    margin:10px 0;
+    border-radius:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.song span{ cursor:pointer; }
+
+.song button{
+    background:#ff00ff;
+    border:none;
+    padding:5px 10px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.song button:hover{
+    background:#00ffff;
+    color:black;
+}
+
+select,input{
+    padding:8px;
+    border-radius:10px;
+    background:#222;
+    color:white;
+    margin:5px 0;
+}
+
+.player{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:#111;
+    padding:10px;
+    box-shadow:0 0 15px #00ffff;
+}
+
+h2{ color:#00ffff; }
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🎧 DarkWave Ultimate Pro</h1>
+<nav>
+<button onclick="showPage('home')">Home</button>
+<button onclick="showPage('discover')">Discover</button>
+<button onclick="showPage('favorites')">My Folder</button>
+<button onclick="showPage('upload')">Upload</button>
+</nav>
+</header>
+
+<!-- HOME -->
+<section id="home" class="page active">
+<h2>🔥 Trending Artists</h2>
+<div class="card-container">
+<div class="card" onclick="filterArtist('Taylor Swift')">
+<img src="https://i.imgur.com/Z8qvKZK.jpg">
+<p>Taylor Swift</p>
+</div>
+
+<div class="card" onclick="filterArtist('Anirudh')">
+<img src="https://i.imgur.com/j8s6N6C.jpg">
+<p>Anirudh</p>
+</div>
+
+<div class="card" onclick="filterArtist('AR Rahman')">
+<img src="https://i.imgur.com/b9r5sEL.jpg">
+<p>AR Rahman</p>
+</div>
+</div>
+
+<h2>✨ Suggested For You</h2>
+<div id="suggestions"></div>
+</section>
+
+<!-- DISCOVER -->
+<section id="discover" class="page">
+<h2>🎵 Discover Music</h2>
+
+<p>By Mood</p>
+<select onchange="filterMood(this.value)">
+<option value="">Select Mood</option>
+<option value="happy">Happy</option>
+<option value="sad">Sad</option>
+<option value="party">Party</option>
+<option value="romantic">Romantic</option>
+</select>
+
+<p>By Age</p>
+<select onchange="filterAge(this.value)">
+<option value="">Select Age</option>
+<option value="teen">Teen</option>
+<option value="adult">Adult</option>
+</select>
+
+<p>By Occasion</p>
+<select onchange="filterOccasion(this.value)">
+<option value="">Select Occasion</option>
+<option value="birthday">Birthday</option>
+<option value="breakup">Breakup</option>
+<option value="gym">Gym</option>
+</select>
+
+<div id="songList"></div>
+</section>
+
+<!-- FAVORITES -->
+<section id="favorites" class="page">
+<h2>📁 My Favorite Folder</h2>
+<div id="favoriteList"></div>
+</section>
+
+<!-- UPLOAD -->
+<section id="upload" class="page">
+<h2>🎶 Upload Your Music</h2>
+<input type="file" accept="audio/*" onchange="uploadSong(event)">
+<div id="uploadList"></div>
+</section>
+
+<!-- PLAYER -->
+<div class="player">
+<audio id="audioPlayer" controls></audio>
+</div>
+
+<script>
+let songs=[
+{name:"Love Story",artist:"Taylor Swift",mood:"romantic",age:"teen",occasion:"birthday",src:""},
+{name:"Arabic Kuthu",artist:"Anirudh",mood:"party",age:"teen",occasion:"gym",src:""},
+{name:"Agar Tum Saath Ho",artist:"AR Rahman",mood:"sad",age:"adult",occasion:"breakup",src:""},
+{name:"Shake It Off",artist:"Taylor Swift",mood:"happy",age:"teen",occasion:"birthday",src:""}
+];
+
+function showPage(id){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+if(id==="favorites") loadFavorites();
+if(id==="home") generateSuggestions();
+}
+
+function createSongHTML(song){
+return `<div class="song">
+<span onclick="playSong('${song.src}')">${song.name} - ${song.artist}</span>
+<button onclick='addFavorite(${JSON.stringify(song)})'>❤️</button>
+</div>`;
+}
+
+function displaySongs(list){
+const container=document.getElementById("songList");
+container.innerHTML="";
+list.forEach(s=>container.innerHTML+=createSongHTML(s));
+}
+
+function filterMood(m){ displaySongs(songs.filter(s=>s.mood===m)); }
+function filterAge(a){ displaySongs(songs.filter(s=>s.age===a)); }
+function filterOccasion(o){ displaySongs(songs.filter(s=>s.occasion===o)); }
+
+function filterArtist(a){
+showPage("discover");
+displaySongs(songs.filter(s=>s.artist===a));
+}
+
+function playSong(src){
+if(!src){ alert("Upload real MP3 to play 🎵"); return; }
+const player=document.getElementById("audioPlayer");
+player.src=src;
+player.play();
+}
+
+function addFavorite(song){
+let fav=JSON.parse(localStorage.getItem("favorites"))||[];
+fav.push(song);
+localStorage.setItem("favorites",JSON.stringify(fav));
+alert("Added to Folder ❤️");
+}
+
+function loadFavorites(){
+let fav=JSON.parse(localStorage.getItem("favorites"))||[];
+const list=document.getElementById("favoriteList");
+list.innerHTML="";
+fav.forEach(s=>list.innerHTML+=createSongHTML(s));
+}
+
+function uploadSong(e){
+const file=e.target.files[0];
+if(file){
+const url=URL.createObjectURL(file);
+const newSong={name:file.name,artist:"You",mood:"custom",age:"custom",occasion:"custom",src:url};
+songs.push(newSong);
+document.getElementById("uploadList").innerHTML+=createSongHTML(newSong);
+}
+}
+
+function generateSuggestions(){
+const container=document.getElementById("suggestions");
+container.innerHTML="";
+let randomSongs=songs.sort(()=>0.5-Math.random()).slice(0,2);
+randomSongs.forEach(s=>container.innerHTML+=createSongHTML(s));
+}
+
+generateSuggestions();
+</script>
+
+</body>
+</html>
